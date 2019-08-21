@@ -8,14 +8,16 @@ object ServiceMain extends App {
   import akka.util.Timeout
   import com.routes.RestApi
   import com.typesafe.config.ConfigFactory
+
   import scala.concurrent.duration._
   import scala.concurrent.ExecutionContextExecutor
+  import scala.util.Try
 
   //this configs are in the application.conf file
   val config = ConfigFactory.load()
 
   val host = config.getString("http.host")
-  val port = config.getInt("http.port")
+  val port = Try(System.getenv("PORT")).map(_.toInt).getOrElse(9000)
 
   implicit val timeOut: Timeout = 5 seconds
 
