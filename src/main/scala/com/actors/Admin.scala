@@ -7,7 +7,7 @@ import com.messages.Messages._
 import akka.pattern._
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class Admin(implicit timeout: Timeout)  extends  Actor{
+class Admin(implicit timeout: Timeout) extends Actor {
 
   import akka.actor.ActorRef
 
@@ -17,27 +17,24 @@ class Admin(implicit timeout: Timeout)  extends  Actor{
     context.actorOf(TicketSeller.apply(name), name)
   }
 
-
-  override def receive: Receive ={
-
+  override def receive: Receive = {
 
     case CreateEvent(name, tickets) ⇒
-    def create(): Unit = {
-      import com.messages.Messages.{Event, EventCreated}
-      //        creates the ticket seller
-      val eventTickets = createTicketSeller(name)
-      //        builds a list of numbered tickets
-      val newTickets = (1 to tickets).map { ticketId ⇒
-        TicketSeller.Ticket(ticketId)
-      }.toVector
-      //        sends the tickets to the TicketSeller
-      eventTickets ! TicketSeller.Add(newTickets)
-      //        creates an event and responds with EventCreated
-      sender() ! EventCreated(Event(name, tickets))
-    }
+      def create(): Unit = {
+        import com.messages.Messages.{ Event, EventCreated }
+        //        creates the ticket seller
+        val eventTickets = createTicketSeller(name)
+        //        builds a list of numbered tickets
+        val newTickets = (1 to tickets).map { ticketId ⇒
+          TicketSeller.Ticket(ticketId)
+        }.toVector
+        //        sends the tickets to the TicketSeller
+        eventTickets ! TicketSeller.Add(newTickets)
+        //        creates an event and responds with EventCreated
+        sender() ! EventCreated(Event(name, tickets))
+      }
       //      If event exists it responds with EventExists
-      context.child(name).fold(create())(_=>sender ! EventExists)
-
+      context.child(name).fold(create())(_ => sender ! EventExists)
 
     case GetTickets(event, tickets) ⇒
       //      sends an empty Tickets message if the ticket seller couldn't be found
@@ -49,7 +46,6 @@ class Admin(implicit timeout: Timeout)  extends  Actor{
       }
       //      executes notFound or buys with the found TicketSeller
       context.child(event).fold(notFound())(buy)
-
 
     case GetEvent(event) =>
       def notFound() = sender() ! None
@@ -70,7 +66,6 @@ class Admin(implicit timeout: Timeout)  extends  Actor{
       }
 
       pipe(convertToEvents(Future.sequence(getEvents))) to sender()
-
 
     case CancelEvent(event) ⇒
       def notFound(): Unit = sender() ! None

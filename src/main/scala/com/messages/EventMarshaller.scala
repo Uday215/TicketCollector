@@ -15,11 +15,9 @@ case class TicketRequest(tickets: Int) {
 // message containing an error
 case class Error(message: String)
 
+trait EventMarshaller extends PlayJsonSupport {
 
-
-trait EventMarshaller extends  PlayJsonSupport{
-
-  import play.api.libs.json.{Json, OFormat}
+  import play.api.libs.json.{ Json, OFormat }
   implicit val eventDescriptionFormat: OFormat[EventDescription] = Json.format[EventDescription]
   implicit val ticketRequests: OFormat[TicketRequest] = Json.format[TicketRequest]
   implicit val errorFormat: OFormat[Error] = Json.format[Error]

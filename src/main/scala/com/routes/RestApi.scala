@@ -13,44 +13,36 @@ import akka.http.scaladsl.server._
 import com.messages.Messages._
 import com.messages.Messages
 
-
 import akka.http.scaladsl.server.Directives._
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{ ExecutionContext, ExecutionContextExecutor, Future }
 import StatusCodes._
 
-class RestApi(system:ActorSystem,timeout: Timeout)  extends RestRoutes {
+class RestApi(system: ActorSystem, timeout: Timeout) extends RestRoutes {
 
   import com.messages.TicketSeller
 
-  implicit  val requestTimeout:Timeout=timeout
+  implicit val requestTimeout: Timeout = timeout
 
-  implicit  def executionContext=system.dispatcher
+  implicit def executionContext = system.dispatcher
 
-  def createTicket()=system.actorOf(TicketSeller.props)
+  def createTicket() = system.actorOf(TicketSeller.props)
 
 }
 
+trait RestRoutes extends TicketApi with EventMarshaller {
 
+  val service = "ticket"
 
+  val version = "v1"
 
-trait  RestRoutes extends TicketApi with EventMarshaller{
+  protected val createEventRoute: Route = {
 
+    pathPrefix(service / version / "events" / Segment) { event =>
 
-
-
-  val service="ticket"
-
-  val version="v1"
-
-  protected  val createEventRoute:Route ={
-
-
-    pathPrefix(service/version/"events"/ Segment){ event =>
-
-      post{
+      post {
         //    POST show-tix/v1/events/event_name
-        pathEndOrSingleSlash{
-          entity(as[EventDescription]){
+        pathEndOrSingleSlash {
+          entity(as[EventDescription]) {
             ed =>
               onSuccess(createEvent(event, ed.tickets)) {
                 case Messages.EventCreated(event) => complete(Created)
@@ -70,15 +62,14 @@ trait  RestRoutes extends TicketApi with EventMarshaller{
 
   }
 
+  protected val getAllEventsRoute: Route = {
 
-  protected val  getAllEventsRoute:Route={
-
-    pathPrefix(service/version/"events"){
-      get{
+    pathPrefix(service / version / "events") {
+      get {
         // GET show-tix/v1/events
-        pathEndOrSingleSlash{
-          onSuccess(getEvents()){ events=>
-            complete(OK,events)
+        pathEndOrSingleSlash {
+          onSuccess(getEvents()) { events =>
+            complete(OK, events)
 
           }
         }
@@ -86,16 +77,15 @@ trait  RestRoutes extends TicketApi with EventMarshaller{
     }
   }
 
+  protected val getEventRoute: Route = {
 
-  protected val  getEventRoute:Route={
-
-    pathPrefix(service/version/"events"/Segment){ event =>
-      get{
+    pathPrefix(service / version / "events" / Segment) { event =>
+      get {
         // GET show-tix/v1/events/:event
 
-        pathEndOrSingleSlash{
-          onSuccess(getEvent(event)){
-            _.fold(complete(NotFound))(e ⇒ complete(OK,e))
+        pathEndOrSingleSlash {
+          onSuccess(getEvent(event)) {
+            _.fold(complete(NotFound))(e ⇒ complete(OK, e))
           }
         }
 
@@ -104,8 +94,8 @@ trait  RestRoutes extends TicketApi with EventMarshaller{
     }
   }
 
-// new changes test
-  protected  val deleteEventRoute:Route={
+  // new changes test
+  protected val deleteEventRoute: Route = {
     pathPrefix(service / version / "events" / Segment) { event ⇒
       delete {
         // DELETE show-tix/v1/events/:event
@@ -119,11 +109,11 @@ trait  RestRoutes extends TicketApi with EventMarshaller{
 
   }
 
-  protected val purchaseEventTicketRoute:Route={
+  protected val purchaseEventTicketRoute: Route = {
 
     pathPrefix(service / version / "events" / Segment / "tickets") { event ⇒
       post {
-        import  com.messages.TicketRequest
+        import com.messages.TicketRequest
         // POST show-tix/v1/events/:event/tickets
         pathEndOrSingleSlash {
           entity(as[TicketRequest]) { request ⇒
@@ -140,23 +130,17 @@ trait  RestRoutes extends TicketApi with EventMarshaller{
   val routes: Route = createEventRoute ~ getAllEventsRoute ~ getEventRoute ~ deleteEventRoute ~ purchaseEventTicketRoute
 }
 
-
-
-
-
-
-trait TicketApi{
+trait TicketApi {
 
   import akka.actor.ActorRef
   import com.messages.TicketSeller
 
-  import scala.concurrent.{ExecutionContext, Future}
+  import scala.concurrent.{ ExecutionContext, Future }
 
   def createTicket(): ActorRef
 
   implicit def executionContext: ExecutionContext
   implicit def requestTimeout: Timeout
-
 
   lazy val ticketRef: ActorRef = createTicket()
 
