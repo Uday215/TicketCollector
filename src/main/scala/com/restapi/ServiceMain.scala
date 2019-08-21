@@ -31,7 +31,7 @@ object ServiceMain extends App {
   try {
     bindingFuture.map { serverBinding =>
       println(s"RestApi bound to ${serverBinding.localAddress}")
-
+      println(s"RestApi bound to {}:{}!, $host, $port")
     }
   } catch {
     case exception: Exception =>
