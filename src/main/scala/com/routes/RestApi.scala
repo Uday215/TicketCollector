@@ -104,7 +104,7 @@ trait  RestRoutes extends TicketApi with EventMarshaller{
     }
   }
 
-
+// new changes test
   protected  val deleteEventRoute:Route={
     pathPrefix(service / version / "events" / Segment) { event ⇒
       delete {
